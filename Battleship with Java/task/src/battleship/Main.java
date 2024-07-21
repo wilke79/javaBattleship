@@ -8,10 +8,10 @@ class Field {
     char[][] field;
 
     public void init() {
-        field = new char[NUM_COLS][NUM_ROWS];
+        this.field = new char[NUM_COLS][NUM_ROWS];
         for (int i = 0; i < NUM_COLS; ++i) {
             for (int j = 0; j < NUM_ROWS; ++j) {
-                field[j][i] = '~';
+                this.field[j][i] = '~';
             }
             System.out.print("\n");
         }
@@ -23,6 +23,18 @@ class Field {
                     System.out.print(i == 0 ? j == 0 ? " " : j :
                             j == 0 ? Character.toString(64 + i) : this.field[j - 1][i - 1]);
                     System.out.print(" ");
+            }
+            System.out.print("\n");
+        }
+    }
+
+    public void printFogged() {
+        for (int i = 0; i <= NUM_COLS; ++i) {
+            for (int j = 0; j <= NUM_ROWS; ++j) {
+                System.out.print(i == 0 ? j == 0 ? " " : j :
+                        j == 0 ? Character.toString(64 + i) :
+                                this.field[j - 1][i - 1] == 'O' ? '~' : this.field[j - 1][i - 1]);
+                System.out.print(" ");
             }
             System.out.print("\n");
         }
@@ -53,13 +65,13 @@ class Field {
         return true;
     }
 
-    public void placeShot(Coordinate shot) {
+    public boolean placeShot(Coordinate shot) {
         if (field[shot.x - 1][shot.y - 1] == 'O') {
-            System.out.println("You hit a ship!");
             field[shot.x - 1][shot.y - 1] = 'X';
+            return true;
         } else {
-            System.out.println("You missed!");
             field[shot.x - 1][shot.y - 1] = 'M';
+            return false;
         }
     }
 }
@@ -184,18 +196,23 @@ public class Main {
             field.print();
         }
         System.out.println("The game starts!");
+        field.printFogged();
+        System.out.println("Take a shot!");
+        boolean hit = false;
         do {
             String input = scanner.nextLine();
             Coordinate shot = new Coordinate(input);
             if (shot.isValid()) {
                 System.out.println(shot.x);
                 System.out.println(shot.y);
-                field.placeShot(shot);
+                hit = field.placeShot(shot);
                 break;
             } else {
                 System.out.println("Error! You entered the wrong coordinates! Try again:");
             }
         } while (true);
+        field.printFogged();
+        System.out.println(hit ? "You hit a ship!" : "You missed!");
         field.print();
     }
 }
