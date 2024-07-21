@@ -198,7 +198,7 @@ public class Main {
         System.out.println("The game starts!");
         field.printFogged();
         System.out.println("Take a shot!");
-        boolean hit = false;
+        boolean hit;
         do {
             String input = scanner.nextLine();
             Coordinate shot = new Coordinate(input);
