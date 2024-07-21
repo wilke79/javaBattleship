@@ -65,14 +65,32 @@ class Field {
         return true;
     }
 
-    public boolean placeShot(Coordinate shot) {
-        if (field[shot.x - 1][shot.y - 1] == 'O') {
+    public Ship placeShot(Coordinate shot, List<Ship> ships) {
+        if (field[shot.x - 1][shot.y - 1] == 'O' || field[shot.x - 1][shot.y - 1] == 'X') {
             field[shot.x - 1][shot.y - 1] = 'X';
-            return true;
+            for (Ship ship: ships) {
+                for (Coordinate part: ship.getParts()) {
+                    if (part.x == shot.x && part.y == shot.y) {
+                        ship.setHitPart(shot);
+                        return ship;
+                    }
+                }
+            }
         } else {
             field[shot.x - 1][shot.y - 1] = 'M';
-            return false;
         }
+        return null;
+    }
+
+    public boolean allShipsSunk() {
+        for (int i = 0; i < NUM_COLS; ++i) {
+            for (int j = 0; j < NUM_ROWS; ++j) {
+                if (field[i][j] == 'O') {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 }
 
@@ -109,6 +127,7 @@ class Ship {
     final Coordinate end;
     final int length;
     final List<Coordinate> parts = new ArrayList<>();
+    final List<Coordinate> hitParts = new ArrayList<>();
 
     public Ship(String start, String end) {
         Coordinate startCoordinate = new Coordinate(start);
@@ -153,6 +172,14 @@ class Ship {
     public List<Coordinate> getParts() {
         return parts;
     }
+
+    public void setHitPart(Coordinate part) {
+        this.hitParts.add(part);
+    }
+
+    public boolean isShipSunk() {
+        return hitParts.size() == this.length;
+    }
 }
 
 class ShipType {
@@ -179,6 +206,7 @@ public class Main {
         shipTypes.add(new ShipType("Submarine", 3));
         shipTypes.add(new ShipType("Cruiser", 3));
         shipTypes.add(new ShipType("Destroyer", 2));
+        List<Ship> ships = new ArrayList<>();
         for(ShipType shipType: shipTypes) {
             System.out.printf("Enter the coordinates of the %s (%d cells):\n",
                     shipType.name, shipType.length);
@@ -190,6 +218,7 @@ public class Main {
                 } else if (!field.placeShip(ship)) {
                     System.out.println("Error! You placed it too close to another one. Try again:");
                 } else if (ship.getLength() != 0) {
+                    ships.add(ship);
                     break;
                 }
             } while (true);
@@ -198,21 +227,23 @@ public class Main {
         System.out.println("The game starts!");
         field.printFogged();
         System.out.println("Take a shot!");
-        boolean hit;
         do {
-            String input = scanner.nextLine();
-            Coordinate shot = new Coordinate(input);
-            if (shot.isValid()) {
-                System.out.println(shot.x);
-                System.out.println(shot.y);
-                hit = field.placeShot(shot);
-                break;
-            } else {
-                System.out.println("Error! You entered the wrong coordinates! Try again:");
-            }
-        } while (true);
-        field.printFogged();
-        System.out.println(hit ? "You hit a ship!" : "You missed!");
-        field.print();
+            Ship hitShip;
+            do {
+                String input = scanner.nextLine();
+                Coordinate shot = new Coordinate(input);
+                if (shot.isValid()) {
+                    hitShip = field.placeShot(shot, ships);
+                    break;
+                } else {
+                    System.out.println("Error! You entered the wrong coordinates! Try again:");
+                }
+            } while (true);
+            field.printFogged();
+            System.out.println(hitShip == null ? "You missed!  Try again:" :
+                    hitShip.isShipSunk() ? "You sank a ship! Specify a new target:" :
+                            "You hit a ship! Try again:");
+        } while (!field.allShipsSunk());
+        System.out.println("You sank the last ship. You won. Congratulations!");
     }
 }
