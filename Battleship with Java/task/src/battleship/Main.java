@@ -13,7 +13,6 @@ class Field {
             for (int j = 0; j < NUM_ROWS; ++j) {
                 this.field[j][i] = '~';
             }
-            System.out.print("\n");
         }
     }
 
@@ -196,54 +195,68 @@ public class Main {
 
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
-        Ship ship;
-        Field field = new Field();
-        field.init();
-        field.print();
         List<ShipType> shipTypes = new ArrayList<>();
         shipTypes.add(new ShipType("Aircraft Carrier", 5));
         shipTypes.add(new ShipType("Battleship", 4));
         shipTypes.add(new ShipType("Submarine", 3));
         shipTypes.add(new ShipType("Cruiser", 3));
         shipTypes.add(new ShipType("Destroyer", 2));
-        List<Ship> ships = new ArrayList<>();
-        for(ShipType shipType: shipTypes) {
-            System.out.printf("Enter the coordinates of the %s (%d cells):\n",
-                    shipType.name, shipType.length);
-            do {
-                String input = scanner.nextLine();
-                ship = new Ship(input.split(" ")[0], input.split(" ")[1]);
-                if (ship.getLength() != 0 && ship.getLength() != shipType.length) {
-                    System.out.printf("Error! Wrong length of the %s! Try again:\n", shipType.name);
-                } else if (!field.placeShip(ship)) {
-                    System.out.println("Error! You placed it too close to another one. Try again:");
-                } else if (ship.getLength() != 0) {
-                    ships.add(ship);
-                    break;
-                }
-            } while (true);
-            field.print();
+        String[] players = {"Player 1", "Player 2"};
+        Field[] field = {new Field(), new Field()};
+        Ship[][] ships = new Ship[2][shipTypes.size()];
+        for (int i = 0; i < players.length; i++) {
+            System.out.printf("%s, place your ships on the game field\n", players[i]);
+            field[i].init();
+            field[i].print();
+            for (int j = 0; j < shipTypes.size(); j++) {
+                Ship ship;
+                System.out.printf("Enter the coordinates of the %s (%d cells):\n",
+                        shipTypes.get(j).name, shipTypes.get(j).length);
+                do {
+                    String input = scanner.nextLine();
+                    ship = new Ship(input.split(" ")[0], input.split(" ")[1]);
+                    if (ship.getLength() != 0 && ship.getLength() != shipTypes.get(j).length) {
+                        System.out.printf("Error! Wrong length of the %s! Try again:\n", shipTypes.get(j).name);
+                    } else if (!field[i].placeShip(ship)) {
+                        System.out.println("Error! You placed it too close to another one. Try again:");
+                    } else if (ship.getLength() != 0) {
+                        ships[i][j] = ship;
+                        break;
+                    }
+                } while (true);
+                field[i].print();
+            }
+            System.out.println("Press Enter and pass the move to another player");
+            scanner.nextLine();
         }
         System.out.println("The game starts!");
-        field.printFogged();
-        System.out.println("Take a shot!");
+        int activePlayer = 0;
         do {
+            field[(activePlayer + 1) % 2].printFogged();
+            System.out.println("----------------------------");
+            field[activePlayer].print();
+            System.out.printf("%s, it's your turn:", players[activePlayer]);
             Ship hitShip;
             do {
                 String input = scanner.nextLine();
                 Coordinate shot = new Coordinate(input);
                 if (shot.isValid()) {
-                    hitShip = field.placeShot(shot, ships);
+                    hitShip = field[(activePlayer + 1) % 2].placeShot(shot,
+                            Arrays.stream(ships[(activePlayer + 1) % 2]).toList());
+                    activePlayer = (activePlayer + 1) % 2;
                     break;
                 } else {
                     System.out.println("Error! You entered the wrong coordinates! Try again:");
                 }
             } while (true);
-            field.printFogged();
-            System.out.println(hitShip == null ? "You missed!  Try again:" :
-                    hitShip.isShipSunk() ? "You sank a ship! Specify a new target:" :
-                            "You hit a ship! Try again:");
-        } while (!field.allShipsSunk());
-        System.out.println("You sank the last ship. You won. Congratulations!");
+            if (field[0].allShipsSunk() || field[1].allShipsSunk()) {
+                System.out.println("You sank the last ship. You won. Congratulations!");
+                System.exit(0);
+            }
+            System.out.println(hitShip == null ? "You missed!" : hitShip.isShipSunk() ? "You sank a ship!" :
+                            "You hit a ship!");
+            System.out.println("Press Enter and pass the move to another player");
+            scanner.nextLine();
+        } while (true);
     }
 }
